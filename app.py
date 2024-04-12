@@ -40,7 +40,7 @@ def save_images_to_zip(zip_filename, directory="images"):
     with zipfile.ZipFile(zip_filename, 'w') as zipf:
         for root, dirs, files in os.walk(directory):
             for file in files:
-                if file.endswith('.webp') or file.endswith('.jpeg'):
+                if file.endswith('.webp'):
                     # Calculate relative path to keep directory structure within the ZIP
                     rel_path = os.path.relpath(os.path.join(root, file), os.path.join(directory, '..'))
                     zipf.write(os.path.join(root, file), arcname=rel_path)
