@@ -5,6 +5,7 @@ from PIL import Image
 from io import BytesIO
 import zipfile
 import os
+import shutil
 
 def download_and_save_image(image_url, sku):
     # Check if the URL is valid
@@ -40,11 +41,12 @@ def save_images_to_zip(zip_filename, directory="images"):
     with zipfile.ZipFile(zip_filename, 'w') as zipf:
         for root, dirs, files in os.walk(directory):
             for file in files:
-                if file.endswith('.webp'):
-                    # Calculate relative path to keep directory structure within the ZIP
+                # Ensure this logic matches the files you intend to add (e.g., .jpeg for JPEG files)
+                if file.endswith('.jpeg'):  # Adjusted to check for .jpeg files
                     rel_path = os.path.relpath(os.path.join(root, file), os.path.join(directory, '..'))
                     zipf.write(os.path.join(root, file), arcname=rel_path)
     print(f"Saved all images from '{directory}' to {zip_filename}")
+    
 
 def convert_images_to_jpeg():
     if not os.path.exists('images'):
@@ -57,20 +59,35 @@ def convert_images_to_jpeg():
     for root, dirs, files in os.walk('images'):
         for file in files:
             if file.endswith('.webp'):
-                image_path = os.path.join(root, file)
-                img = Image.open(image_path)
-                # Fill transparent areas with white before converting to 'RGB'
-                if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-                    # Create a white background image
-                    background = Image.new('RGB', img.size, (255, 255, 255))
-                    # Paste the image on the background. 
-                    background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
-                    img = background
-                else:
-                    img = img.convert('RGB')
-                jpeg_path = os.path.join('jpeg_images', file.replace('.webp', '.jpeg'))
-                img.save(jpeg_path, 'JPEG', quality=95)  # Adjust quality as needed
+                try:
+                    image_path = os.path.join(root, file)
+                    print(f"Processing {image_path}...")  # Print statement to verify processing
+                    img = Image.open(image_path)
+                    # Fill transparent areas with white before converting to 'RGB'
+                    if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                        background = Image.new('RGB', img.size, (255, 255, 255))
+                        background.paste(img, mask=img.split()[3])  # 3 is the alpha channel
+                        img = background
+                    else:
+                        img = img.convert('RGB')
+                    jpeg_path = os.path.join('jpeg_images', file.replace('.webp', '.jpeg'))
+                    img.save(jpeg_path, 'JPEG', quality=95)
+                    print(f"Saved {jpeg_path}")  # Print statement to confirm save
+                except Exception as e:
+                    print(f"Failed to convert {file}. Reason: {e}")
     print("Converted all .webp images to .jpeg")
+
+def clear_directory(directory):
+    if os.path.exists(directory):
+        for file in os.listdir(directory):
+            file_path = os.path.join(directory, file)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print(f'Failed to delete {file_path}. Reason: {e}')
 
 def main():
     st.title("Manhead Image Download and Renamer to SKUs")
@@ -86,6 +103,7 @@ def main():
                 image_previews = []  # List to store image paths or PIL images
                 
                 if st.sidebar.button("Download Images from Shopify and Convert to WEBP"):
+                    clear_directory('images')  # Clear the images directory before downloading new images
                     for _, row in df.iterrows():
                         download_and_save_image(row['Image_URL'], row['SKU'])
                         image_path = f"images/{row['SKU']}.webp"
@@ -93,7 +111,7 @@ def main():
                             image_previews.append(image_path)
                     save_images_to_zip("images.zip")
                     st.success("Images downloaded and saved successfully!")
-                    st.session_state.download_clicked = True  # Update the session state variable
+                    st.session_state.download_clicked = True 
                     
                     
                     columns = st.columns(4)  # Create 4 columns
