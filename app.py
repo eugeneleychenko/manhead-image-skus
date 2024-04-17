@@ -97,13 +97,13 @@ def main():
         st.session_state.download_clicked = False
     
     if uploaded_file is not None:
+        clear_directory('images')  # Clear the images directory immediately after a new CSV is uploaded
         try:
             df = pd.read_csv(uploaded_file)
             if "Image_URL" in df.columns and "SKU" in df.columns:
                 image_previews = []  # List to store image paths or PIL images
                 
                 if st.sidebar.button("Download Images from Shopify and Convert to WEBP"):
-                    clear_directory('images')  # Clear the images directory before downloading new images
                     for _, row in df.iterrows():
                         download_and_save_image(row['Image_URL'], row['SKU'])
                         image_path = f"images/{row['SKU']}.webp"
