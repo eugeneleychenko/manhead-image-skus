@@ -91,6 +91,7 @@ def clear_directory(directory):
 
 def main():
     st.title("Manhead Image Download and Renamer to SKUs")
+    st.sidebar.markdown("<small>_Allows users to upload a CSV file containing image URLs and corresponding SKUs, downloads those images, converts them to WEBP format, and then optionally to JPEG, saving them in a ZIP file for download._</small>", unsafe_allow_html=True)
     uploaded_file = st.sidebar.file_uploader("Choose a CSV file with Image_URL and SKU columns", type="csv")
     
     if 'download_clicked' not in st.session_state:
